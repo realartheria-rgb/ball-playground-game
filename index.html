@@ -9,7 +9,7 @@
   <title>Ball Playground 3D</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; background: #05070f; color: #fff; user-select: none; -webkit-user-select: none; touch-action: none; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; background: #05070f; color: #fff; user-select: none; -webkit-user-select: none; }
     canvas { display: block; }
     
     #hud { position: fixed; top: 0; left: 0; right: 0; padding: 15px 20px; display: flex; justify-content: center; gap: 30px; background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent); z-index: 100; }
@@ -45,7 +45,7 @@
     .joystick-base { width: 100%; height: 100%; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); position: relative; }
     .joystick-stick { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background: rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); transition: transform 0.05s; }
     .action-buttons { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 15px; pointer-events: auto; }
-    .btn-jump, .btn-boost { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); color: #fff; font-size: 12px; font-weight: bold; }
+    .btn-jump, .btn-boost { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); color: #fff; font-size: 12px; font-weight: bold; cursor: pointer; }
     .btn-jump:active, .btn-boost:active { background: rgba(255,255,255,0.4); }
     
     @media (max-width: 768px) {
