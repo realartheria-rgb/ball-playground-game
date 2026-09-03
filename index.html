@@ -97,8 +97,8 @@
       </div>
     </div>
     <div class="action-buttons">
-      <button class="btn-jump" id="jumpBtn">JUMP</button>
-      <button class="btn-boost" id="boostBtn">BOOST</button>
+      <button class="btn-jump" id="jumpBtn" onclick="window.gameKeys.space=true" ontouchstart="event.preventDefault();window.gameKeys.space=true" ontouchend="event.preventDefault();window.gameKeys.space=false">JUMP</button>
+      <button class="btn-boost" id="boostBtn" onclick="window.gameKeys.shift=true" ontouchstart="event.preventDefault();window.gameKeys.shift=true" ontouchend="event.preventDefault();window.gameKeys.shift=false">BOOST</button>
     </div>
   </div>
 
@@ -340,6 +340,7 @@
     
     // ============ INPUT ============
     const keys = { w: false, a: false, s: false, d: false, space: false, shift: false };
+    window.gameKeys = keys; // Для HTML-обработчиков
     let cameraAngle = 0;
     let joystickVector = { x: 0, y: 0 };
     
