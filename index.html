@@ -416,11 +416,89 @@
       joystickVector = { x: dx / maxDistance, y: dy / maxDistance };
     }
     
-    // Jump and Boost buttons
-    document.getElementById('jumpBtn').addEventListener('touchstart', (e) => { e.preventDefault(); keys.space = true; });
-    document.getElementById('jumpBtn').addEventListener('touchend', (e) => { e.preventDefault(); keys.space = false; });
-    document.getElementById('boostBtn').addEventListener('touchstart', (e) => { e.preventDefault(); keys.shift = true; });
-    document.getElementById('boostBtn').addEventListener('touchend', (e) => { e.preventDefault(); keys.shift = false; });
+    // Jump and Boost buttons - исправленная обработка touch
+    const jumpBtn = document.getElementById('jumpBtn');
+    const boostBtn = document.getElementById('boostBtn');
+    
+    jumpBtn.addEventListener('touchstart', (e) => { 
+      e.preventDefault(); 
+      e.stopPropagation();
+      keys.space = true; 
+    }, { passive: false });
+    
+    jumpBtn.addEventListener('touchend', (e) => { 
+      e.preventDefault(); 
+      e.stopPropagation();
+      keys.space = false; 
+    }, { passive: false });
+    
+    jumpBtn.addEventListener('mousedown', (e) => { 
+      e.preventDefault(); 
+      keys.space = true; 
+    });
+    
+    jumpBtn.addEventListener('mouseup', (e) => { 
+      e.preventDefault(); 
+      keys.space = false; 
+    });
+    
+    boostBtn.addEventListener('touchstart', (e) => { 
+      e.preventDefault(); 
+      e.stopPropagation();
+      keys.shift = true; 
+    }, { passive: false });
+    
+    boostBtn.addEventListener('touchend', (e) => { 
+      e.preventDefault(); 
+      e.stopPropagation();
+      keys.shift = false; 
+    }, { passive: false });
+    
+    boostBtn.addEventListener('mousedown', (e) => { 
+      e.preventDefault(); 
+      keys.shift = true; 
+    });
+    
+    boostBtn.addEventListener('mouseup', (e) => { 
+      e.preventDefault(); 
+      keys.shift = false; 
+    });
+    
+    // Управление камерой через touch (свайп по экрану)
+    let cameraTouch = null;
+    let lastTouchX = 0;
+    
+    document.addEventListener('touchstart', (e) => {
+      // Игнорируем тачи на элементах управления
+      if (e.target.closest('#mobile-controls') || e.target.closest('#menu') || e.target.closest('#gameover')) return;
+      
+      if (cameraTouch === null) {
+        cameraTouch = e.touches[0].identifier;
+        lastTouchX = e.touches[0].clientX;
+      }
+    }, { passive: true });
+    
+    document.addEventListener('touchmove', (e) => {
+      if (cameraTouch === null) return;
+      
+      for (let i = 0; i < e.touches.length; i++) {
+        if (e.touches[i].identifier === cameraTouch) {
+          const deltaX = e.touches[i].clientX - lastTouchX;
+          cameraAngle += deltaX * 0.01;
+          lastTouchX = e.touches[i].clientX;
+          break;
+        }
+      }
+    }, { passive: true });
+    
+    document.addEventListener('touchend', (e) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === cameraTouch) {
+          cameraTouch = null;
+          break;
+        }
+      }
+    }, { passive: true });
     
     // ============ GAME LOGIC ============
     const clock = new THREE.Clock();
