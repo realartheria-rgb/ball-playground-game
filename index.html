@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#05070f">
+  <title>Ball Playground 3D</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; background: #05070f; color: #fff; user-select: none; -webkit-user-select: none; touch-action: none; }
+    canvas { display: block; }
+    
+    #hud { position: fixed; top: 0; left: 0; right: 0; padding: 15px 20px; display: flex; justify-content: center; gap: 30px; background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent); z-index: 100; }
+    .hud-item { display: flex; flex-direction: column; align-items: center; }
+    .hud-label { font-size: 12px; color: #aaa; letter-spacing: 2px; }
+    .hud-value { font-size: 28px; font-weight: bold; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+    
+    #menu { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(5, 7, 15, 0.95); z-index: 200; }
+    .menu-content { text-align: center; padding: 40px; }
+    .game-title { font-size: clamp(32px, 8vw, 64px); font-weight: 900; color: #ffa41b; text-shadow: 0 0 20px rgba(255, 164, 27, 0.5); margin-bottom: 10px; letter-spacing: 4px; }
+    .game-subtitle { font-size: clamp(16px, 4vw, 24px); color: #45e0ff; margin-bottom: 40px; letter-spacing: 2px; }
+    .btn { padding: 15px 50px; font-size: 20px; font-weight: bold; border: none; border-radius: 30px; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 2px; }
+    .btn-primary { background: linear-gradient(135deg, #ffa41b, #ff8c00); color: #fff; box-shadow: 0 5px 20px rgba(255, 164, 27, 0.4); }
+    .btn-primary:active { transform: translateY(-3px) scale(0.95); box-shadow: 0 8px 30px rgba(255, 164, 27, 0.6); }
+    .best-score-display { margin-top: 30px; font-size: 18px; color: #aaa; }
+    .controls-info { margin-top: 40px; font-size: 14px; color: #888; line-height: 1.8; }
+    
+    #gameover { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: none; align-items: center; justify-content: center; background: rgba(5, 7, 15, 0.95); z-index: 200; }
+    .gameover-content { text-align: center; padding: 40px; }
+    .gameover-title { font-size: clamp(36px, 8vw, 56px); font-weight: 900; color: #ff4444; text-shadow: 0 0 20px rgba(255, 68, 68, 0.5); margin-bottom: 30px; }
+    .final-stats { margin-bottom: 30px; }
+    .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .stat-label { color: #aaa; }
+    .stat-value { font-weight: bold; color: #ffa41b; }
+    .new-record { display: none; font-size: 32px; color: #00ff00; margin-bottom: 20px; animation: pulse 0.5s ease-in-out infinite alternate; }
+    @keyframes pulse { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.1); opacity: 1; } }
+    
+    #countdown { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: none; align-items: center; justify-content: center; font-size: clamp(80px, 20vw, 120px); font-weight: 900; color: #fff; z-index: 150; pointer-events: none; }
+    @keyframes countdownPop { 0% { transform: scale(2); opacity: 0; } 50% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.5); opacity: 0; } }
+    
+    #mobile-controls { display: none; position: fixed; bottom: 0; left: 0; right: 0; padding: 20px; z-index: 100; pointer-events: none; }
+    .joystick-zone { position: absolute; bottom: 20px; left: 20px; width: 120px; height: 120px; pointer-events: auto; }
+    .joystick-base { width: 100%; height: 100%; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); position: relative; }
+    .joystick-stick { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background: rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); transition: transform 0.05s; }
+    .action-buttons { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 15px; pointer-events: auto; }
+    .btn-jump, .btn-boost { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); color: #fff; font-size: 12px; font-weight: bold; }
+    .btn-jump:active, .btn-boost:active { background: rgba(255,255,255,0.4); }
+    
+    @media (max-width: 768px) {
+      #mobile-controls { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div class="hud-item"><span class="hud-label">SCORE</span><span class="hud-value" id="score">0</span></div>
+    <div class="hud-item"><span class="hud-label">TIME</span><span class="hud-value" id="time">120</span></div>
+    <div class="hud-item"><span class="hud-label">SPEED</span><span class="hud-value" id="speed">0</span></div>
+    <div class="hud-item"><span class="hud-label">BEST</span><span class="hud-value" id="best">0</span></div>
+  </div>
+  
+  <div id="menu">
+    <div class="menu-content">
+      <h1 class="game-title">BALL PLAYGROUND</h1>
+      <p class="game-subtitle">3D Arcade Game</p>
+      <button class="btn btn-primary" id="playBtn">PLAY</button>
+      <div class="best-score-display">BEST SCORE: <span id="menuBest">0</span></div>
+      <div class="controls-info">
+        <p><strong>Controls:</strong></p>
+        <p>WASD / Arrows / Joystick - Move</p>
+        <p>Space / Button - Jump</p>
+      </div>
+    </div>
+  </div>
+  
+  <div id="gameover">
+    <div class="gameover-content">
+      <h1 class="gameover-title">GAME OVER</h1>
+      <div class="final-stats">
+        <div class="stat-row"><span class="stat-label">SCORE:</span><span class="stat-value" id="finalScore">0</span></div>
+        <div class="stat-row"><span class="stat-label">BEST:</span><span class="stat-value" id="finalBest">0</span></div>
+        <div class="stat-row"><span class="stat-label">COLLECTED:</span><span class="stat-value" id="finalCollected">0</span></div>
+      </div>
+      <div class="new-record" id="newRecord">NEW RECORD!</div>
+      <button class="btn btn-primary" id="restartBtn">PLAY AGAIN</button>
+    </div>
+  </div>
+  
+  <div id="countdown"></div>
+  
+  <div id="mobile-controls">
+    <div class="joystick-zone" id="joystickZone">
+      <div class="joystick-base" id="joystickBase">
+        <div class="joystick-stick" id="joystickStick"></div>
+      </div>
+    </div>
+    <div class="action-buttons">
+      <button class="btn-jump" id="jumpBtn">JUMP</button>
+      <button class="btn-boost" id="boostBtn">BOOST</button>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+    }
+  }
+  </script>
+  
+  <script type="module">
+    import * as THREE from 'three';
+    import * as CANNON from 'cannon-es';
+    
+    // ============ GAME STATE ============
+    const state = {
+      score: 0,
+      bestScore: parseInt(localStorage.getItem('ballPlaygroundBest') || '0'),
+      timeLeft: 120,
+      gameState: 'menu',
+      collected: 0,
+      totalCollectibles: 50
+    };
+    
+    // ============ THREE SETUP ============
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb);
+    scene.fog = new THREE.Fog(0x87ceeb, 80, 200);
+    
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 8, 12);
+    
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+    
+    // ============ PHYSICS ============
+    const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -9.82, 0) });
+    world.broadphase = new CANNON.SAPBroadphase(world);
+    world.allowSleep = true;
+    
+    // ============ LIGHTS ============
+    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambient);
+    
+    const directional = new THREE.DirectionalLight(0xffffff, 1.0);
+    directional.position.set(30, 50, 30);
+    directional.castShadow = true;
+    directional.shadow.mapSize.width = 2048;
+    directional.shadow.mapSize.height = 2048;
+    directional.shadow.camera.near = 0.5;
+    directional.shadow.camera.far = 150;
+    directional.shadow.camera.left = -50;
+    directional.shadow.camera.right = 50;
+    directional.shadow.camera.top = 50;
+    directional.shadow.camera.bottom = -50;
+    scene.add(directional);
+    
+    const hemisphere = new THREE.HemisphereLight(0x87ceeb, 0x44aa44, 0.4);
+    scene.add(hemisphere);
+    
+    // ============ GROUND ============
+    const groundGeo = new THREE.PlaneGeometry(100, 100);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x4caf50, roughness: 0.8 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    
+    const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
+    groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+    world.addBody(groundBody);
+    
+    // ============ PLAYER ============
+    const playerGroup = new THREE.Group();
+    scene.add(playerGroup);
+    
+    const ballGeo = new THREE.SphereGeometry(0.8, 32, 32);
+    const ballMat = new THREE.MeshStandardMaterial({ color: 0xff4444, roughness: 0.3, metalness: 0.1 });
+    const ballMesh = new THREE.Mesh(ballGeo, ballMat);
+    ballMesh.castShadow = true;
+    playerGroup.add(ballMesh);
+    
+    // Stripes on ball
+    const stripeGeo = new THREE.TorusGeometry(0.8, 0.05, 8, 32);
+    const stripeMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    for (let i = 0; i < 3; i++) {
+      const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+      stripe.rotation.x = (Math.PI / 3) * i;
+      playerGroup.add(stripe);
+    }
+    
+    const playerBody = new CANNON.Body({
+      mass: 5,
+      shape: new CANNON.Sphere(0.8),
+      position: new CANNON.Vec3(0, 2, 0),
+      linearDamping: 0.3
+    });
+    world.addBody(playerBody);
+    
+    // ============ COLLECTIBLES ============
+    const collectibles = [];
+    const collectibleTypes = [
+      { color: 0xffd700, points: 10, name: 'coin' },
+      { color: 0xffeb3b, points: 50, name: 'star' },
+      { color: 0x00ffff, points: 20, name: 'speed' },
+      { color: 0x2196f3, points: 30, name: 'shield' },
+      { color: 0x9c27b0, points: 25, name: 'jump' }
+    ];
+    
+    for (let i = 0; i < 50; i++) {
+      const type = collectibleTypes[Math.floor(Math.random() * collectibleTypes.length)];
+      const geo = type.name === 'star' 
+        ? new THREE.OctahedronGeometry(0.4)
+        : type.name === 'coin'
+        ? new THREE.CylinderGeometry(0.3, 0.3, 0.1, 16)
+        : new THREE.SphereGeometry(0.3, 16, 16);
+      
+      const mat = new THREE.MeshStandardMaterial({
+        color: type.color,
+        metalness: 0.5,
+        roughness: 0.3,
+        emissive: type.color,
+        emissiveIntensity: 0.3
+      });
+      
+      const mesh = new THREE.Mesh(geo, mat);
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 5 + Math.random() * 35;
+      mesh.position.set(Math.cos(angle) * radius, 1.5, Math.sin(angle) * radius);
+      mesh.userData = { type: type.name, points: type.points, collected: false };
+      scene.add(mesh);
+      collectibles.push(mesh);
+    }
+    
+    // ============ OBSTACLES ============
+    const obstacles = [];
+    
+    // Platform with slide
+    const platformGeo = new THREE.BoxGeometry(6, 1, 6);
+    const platformMat = new THREE.MeshStandardMaterial({ color: 0xff9800 });
+    const platform = new THREE.Mesh(platformGeo, platformMat);
+    platform.position.set(15, 0.5, 0);
+    platform.castShadow = true;
+    platform.receiveShadow = true;
+    scene.add(platform);
+    
+    const platformBody = new CANNON.Body({
+      mass: 0,
+      shape: new CANNON.Box(new CANNON.Vec3(3, 0.5, 3)),
+      position: new CANNON.Vec3(15, 0.5, 0)
+    });
+    world.addBody(platformBody);
+    
+    // Slide
+    const slideGeo = new THREE.BoxGeometry(3, 0.2, 10);
+    const slideMat = new THREE.MeshStandardMaterial({ color: 0x2196f3 });
+    const slide = new THREE.Mesh(slideGeo, slideMat);
+    slide.position.set(15, 3, 8);
+    slide.rotation.x = -Math.PI / 6;
+    slide.castShadow = true;
+    scene.add(slide);
+    
+    const slideBody = new CANNON.Body({
+      mass: 0,
+      shape: new CANNON.Box(new CANNON.Vec3(1.5, 0.1, 5)),
+      position: new CANNON.Vec3(15, 3, 8)
+    });
+    slideBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 6);
+    world.addBody(slideBody);
+    
+    // Colorful cubes
+    const cubeColors = [0xff5722, 0x2196f3, 0xffeb3b, 0x9c27b0, 0x4caf50];
+    const cubePositions = [[-10, 0.75, -15], [10, 0.75, -15], [-10, 0.75, 15], [10, 0.75, 15]];
+    cubePositions.forEach(([x, y, z], i) => {
+      const cube = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 1.5, 1.5),
+        new THREE.MeshStandardMaterial({ color: cubeColors[i % cubeColors.length] })
+      );
+      cube.position.set(x, y, z);
+      cube.castShadow = true;
+      scene.add(cube);
+      
+      const cubeBody = new CANNON.Body({
+        mass: 0,
+        shape: new CANNON.Box(new CANNON.Vec3(0.75, 0.75, 0.75)),
+        position: new CANNON.Vec3(x, y, z)
+      });
+      world.addBody(cubeBody);
+    });
+    
+    // Trees
+    const treePositions = [[-25, 0, -25], [25, 0, -25], [-25, 0, 25], [25, 0, 25]];
+    treePositions.forEach(([x, y, z]) => {
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.5, 3, 8),
+        new THREE.MeshStandardMaterial({ color: 0x795548 })
+      );
+      trunk.position.set(x, y + 1.5, z);
+      trunk.castShadow = true;
+      scene.add(trunk);
+      
+      for (let i = 0; i < 3; i++) {
+        const crown = new THREE.Mesh(
+          new THREE.ConeGeometry(2 - i * 0.5, 2, 8),
+          new THREE.MeshStandardMaterial({ color: [0x2e7d32, 0x388e3c, 0x43a047][i] })
+        );
+        crown.position.set(x, y + 4 + i * 1.2, z);
+        crown.castShadow = true;
+        scene.add(crown);
+      }
+    });
+    
+    // Walls
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x9e9e9e, transparent: true, opacity: 0.3 });
+    const walls = [
+      { pos: [0, 0.75, -50], size: [100, 1.5, 0.5] },
+      { pos: [0, 0.75, 50], size: [100, 1.5, 0.5] },
+      { pos: [-50, 0.75, 0], size: [0.5, 1.5, 100] },
+      { pos: [50, 0.75, 0], size: [0.5, 1.5, 100] }
+    ];
+    walls.forEach(({ pos, size }) => {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(...size), wallMat);
+      wall.position.set(...pos);
+      scene.add(wall);
+      
+      const wallBody = new CANNON.Body({
+        mass: 0,
+        shape: new CANNON.Box(new CANNON.Vec3(size[0] / 2, size[1] / 2, size[2] / 2)),
+        position: new CANNON.Vec3(...pos)
+      });
+      world.addBody(wallBody);
+    });
+    
+    // ============ INPUT ============
+    const keys = { w: false, a: false, s: false, d: false, space: false, shift: false };
+    let cameraAngle = 0;
+    let joystickVector = { x: 0, y: 0 };
+    
+    // Keyboard
+    window.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'w' || key === 'arrowup') keys.w = true;
+      if (key === 's' || key === 'arrowdown') keys.s = true;
+      if (key === 'a' || key === 'arrowleft') keys.a = true;
+      if (key === 'd' || key === 'arrowright') keys.d = true;
+      if (key === ' ') keys.space = true;
+      if (key === 'shift') keys.shift = true;
+    });
+    
+    window.addEventListener('keyup', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'w' || key === 'arrowup') keys.w = false;
+      if (key === 's' || key === 'arrowdown') keys.s = false;
+      if (key === 'a' || key === 'arrowleft') keys.a = false;
+      if (key === 'd' || key === 'arrowright') keys.d = false;
+      if (key === ' ') keys.space = false;
+      if (key === 'shift') keys.shift = false;
+    });
+    
+    // Mouse for camera
+    window.addEventListener('mousemove', (e) => {
+      cameraAngle += e.movementX * 0.005;
+    });
+    
+    // Touch joystick
+    const joystickZone = document.getElementById('joystickZone');
+    const joystickStick = document.getElementById('joystickStick');
+    let joystickTouch = null;
+    let joystickCenter = { x: 0, y: 0 };
+    
+    joystickZone.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = joystickZone.getBoundingClientRect();
+      joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      joystickTouch = touch.identifier;
+      updateJoystick(touch.clientX, touch.clientY);
+    });
+    
+    joystickZone.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      for (let i = 0; i < e.touches.length; i++) {
+        if (e.touches[i].identifier === joystickTouch) {
+          updateJoystick(e.touches[i].clientX, e.touches[i].clientY);
+          break;
+        }
+      }
+    });
+    
+    joystickZone.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      joystickTouch = null;
+      joystickStick.style.transform = 'translate(0, 0)';
+      joystickVector = { x: 0, y: 0 };
+    });
+    
+    function updateJoystick(clientX, clientY) {
+      const maxDistance = 40;
+      let dx = clientX - joystickCenter.x;
+      let dy = clientY - joystickCenter.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance > maxDistance) {
+        dx = (dx / distance) * maxDistance;
+        dy = (dy / distance) * maxDistance;
+      }
+      
+      joystickStick.style.transform = `translate(${dx}px, ${dy}px)`;
+      joystickVector = { x: dx / maxDistance, y: dy / maxDistance };
+    }
+    
+    // Jump and Boost buttons
+    document.getElementById('jumpBtn').addEventListener('touchstart', (e) => { e.preventDefault(); keys.space = true; });
+    document.getElementById('jumpBtn').addEventListener('touchend', (e) => { e.preventDefault(); keys.space = false; });
+    document.getElementById('boostBtn').addEventListener('touchstart', (e) => { e.preventDefault(); keys.shift = true; });
+    document.getElementById('boostBtn').addEventListener('touchend', (e) => { e.preventDefault(); keys.shift = false; });
+    
+    // ============ GAME LOGIC ============
+    const clock = new THREE.Clock();
+    let isGrounded = false;
+    let canJump = true;
+    let boostMultiplier = 1;
+    
+    function updatePlayer(delta) {
+      if (state.gameState !== 'playing') return;
+      
+      const inputVector = new THREE.Vector3(0, 0, 0);
+      
+      // Keyboard input
+      if (keys.w) inputVector.z -= 1;
+      if (keys.s) inputVector.z += 1;
+      if (keys.a) inputVector.x -= 1;
+      if (keys.d) inputVector.x += 1;
+      
+      // Joystick input
+      inputVector.x += joystickVector.x;
+      inputVector.z += joystickVector.y;
+      
+      if (inputVector.length() > 0) {
+        inputVector.normalize();
+        
+        // Apply camera rotation
+        const angle = cameraAngle;
+        const rotatedX = inputVector.x * Math.cos(angle) - inputVector.z * Math.sin(angle);
+        const rotatedZ = inputVector.x * Math.sin(angle) + inputVector.z * Math.cos(angle);
+        
+        const accel = 40 * boostMultiplier;
+        playerBody.applyForce(new CANNON.Vec3(rotatedX * accel, 0, rotatedZ * accel), playerBody.position);
+      }
+      
+      // Jump
+      if (keys.space && isGrounded && canJump) {
+        playerBody.velocity.y = 8;
+        isGrounded = false;
+        canJump = false;
+        setTimeout(() => canJump = true, 200);
+      }
+      
+      // Limit horizontal speed
+      const horizontalVel = new CANNON.Vec3(playerBody.velocity.x, 0, playerBody.velocity.z);
+      if (horizontalVel.length() > 15 * boostMultiplier) {
+        horizontalVel.scale(15 * boostMultiplier / horizontalVel.length(), horizontalVel);
+        playerBody.velocity.x = horizontalVel.x;
+        playerBody.velocity.z = horizontalVel.z;
+      }
+      
+      // Update mesh position
+      playerGroup.position.copy(playerBody.position);
+      
+      // Rotate ball
+      if (horizontalVel.length() > 0.1) {
+        const rotAxis = new THREE.Vector3(-horizontalVel.z, 0, horizontalVel.x).normalize();
+        const rotSpeed = horizontalVel.length() * delta;
+        ballMesh.rotateOnWorldAxis(rotAxis, rotSpeed);
+      }
+      
+      // Update camera
+      const cameraOffset = new THREE.Vector3(
+        Math.sin(cameraAngle) * 12,
+        8,
+        Math.cos(cameraAngle) * 12
+      );
+      const targetPos = playerGroup.position.clone().add(cameraOffset);
+      camera.position.lerp(targetPos, 0.05);
+      camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z);
+      
+      // Check grounded
+      const rayFrom = playerBody.position;
+      const rayTo = new CANNON.Vec3(playerBody.position.x, playerBody.position.y - 1.2, playerBody.position.z);
+      const ray = new CANNON.Ray(rayFrom, rayTo);
+      const result = ray.intersectWorld(world, { mode: CANNON.Ray.CLOSEST, skipBackfaces: true });
+      isGrounded = result.hasHit;
+      
+      // Check fall
+      if (playerBody.position.y < -10) {
+        playerBody.position.set(0, 2, 0);
+        playerBody.velocity.set(0, 0, 0);
+      }
+    }
+    
+    function updateCollectibles(delta) {
+      if (state.gameState !== 'playing') return;
+      
+      collectibles.forEach(mesh => {
+        if (mesh.userData.collected) return;
+        
+        mesh.rotation.y += delta * 2;
+        mesh.position.y = 1.5 + Math.sin(Date.now() * 0.003 + mesh.id) * 0.2;
+        
+        const dist = playerGroup.position.distanceTo(mesh.position);
+        if (dist < 1.5) {
+          mesh.userData.collected = true;
+          scene.remove(mesh);
+          state.score += mesh.userData.points;
+          state.collected++;
+        }
+      });
+    }
+    
+    function updateHUD() {
+      document.getElementById('score').textContent = state.score;
+      document.getElementById('time').textContent = Math.ceil(state.timeLeft);
+      document.getElementById('speed').textContent = Math.round(playerBody.velocity.length());
+      document.getElementById('best').textContent = state.bestScore;
+    }
+    
+    // ============ GAME FLOW ============
+    function startGame() {
+      state.score = 0;
+      state.timeLeft = 120;
+      state.collected = 0;
+      state.gameState = 'countdown';
+      
+      playerBody.position.set(0, 2, 0);
+      playerBody.velocity.set(0, 0, 0);
+      
+      collectibles.forEach(mesh => {
+        mesh.userData.collected = false;
+        scene.add(mesh);
+      });
+      
+      document.getElementById('menu').style.display = 'none';
+      document.getElementById('hud').style.display = 'flex';
+      document.getElementById('countdown').style.display = 'flex';
+      
+      let count = 3;
+      const countInterval = setInterval(() => {
+        if (count > 1) {
+          document.getElementById('countdown').textContent = count - 1;
+          count--;
+        } else {
+          clearInterval(countInterval);
+          document.getElementById('countdown').textContent = 'GO!';
+          document.getElementById('countdown').style.color = '#00ff00';
+          setTimeout(() => {
+            document.getElementById('countdown').style.display = 'none';
+            state.gameState = 'playing';
+          }, 500);
+        }
+      }, 1000);
+    }
+    
+    function endGame() {
+      state.gameState = 'gameover';
+      
+      if (state.score > state.bestScore) {
+        state.bestScore = state.score;
+        localStorage.setItem('ballPlaygroundBest', state.bestScore.toString());
+        document.getElementById('newRecord').style.display = 'block';
+      }
+      
+      document.getElementById('finalScore').textContent = state.score;
+      document.getElementById('finalBest').textContent = state.bestScore;
+      document.getElementById('finalCollected').textContent = `${state.collected}/${state.totalCollectibles}`;
+      document.getElementById('gameover').style.display = 'flex';
+    }
+    
+    document.getElementById('playBtn').addEventListener('click', startGame);
+    document.getElementById('restartBtn').addEventListener('click', () => {
+      document.getElementById('gameover').style.display = 'none';
+      document.getElementById('newRecord').style.display = 'none';
+      startGame();
+    });
+    
+    // Show best score in menu
+    document.getElementById('menuBest').textContent = state.bestScore;
+    document.getElementById('hud').style.display = 'none';
+    
+    // ============ GAME LOOP ============
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      const delta = Math.min(clock.getDelta(), 0.1);
+      
+      if (state.gameState === 'playing') {
+        state.timeLeft -= delta;
+        if (state.timeLeft <= 0) {
+          state.timeLeft = 0;
+          endGame();
+        }
+      }
+      
+      world.step(1/60, delta, 3);
+      updatePlayer(delta);
+      updateCollectibles(delta);
+      updateHUD();
+      
+      renderer.render(scene, camera);
+    }
+    
+    animate();
+    
+    // Resize handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
