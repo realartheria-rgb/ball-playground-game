@@ -1,0 +1,18 @@
+{
+  "name": "ball-playground-game",
+  "version": "1.0.0",
+  "description": "3D Ball Playground Arcade Game",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.160.0",
+    "cannon-es": "^0.20.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
