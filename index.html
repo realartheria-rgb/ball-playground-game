@@ -382,7 +382,7 @@
       joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
       joystickTouch = touch.identifier;
       updateJoystick(touch.clientX, touch.clientY);
-    });
+    }, { passive: false });
     
     joystickZone.addEventListener('touchmove', (e) => {
       e.preventDefault();
@@ -392,14 +392,14 @@
           break;
         }
       }
-    });
+    }, { passive: false });
     
     joystickZone.addEventListener('touchend', (e) => {
       e.preventDefault();
       joystickTouch = null;
       joystickStick.style.transform = 'translate(0, 0)';
       joystickVector = { x: 0, y: 0 };
-    });
+    }, { passive: false });
     
     function updateJoystick(clientX, clientY) {
       const maxDistance = 40;
@@ -420,49 +420,36 @@
     const jumpBtn = document.getElementById('jumpBtn');
     const boostBtn = document.getElementById('boostBtn');
     
-    jumpBtn.addEventListener('touchstart', (e) => { 
-      e.preventDefault(); 
-      e.stopPropagation();
-      keys.space = true; 
-    }, { passive: false });
+    function setupButton(btn, key) {
+      btn.addEventListener('touchstart', (e) => { 
+        e.preventDefault(); 
+        e.stopPropagation();
+        keys[key] = true; 
+      }, { passive: false });
+      
+      btn.addEventListener('touchend', (e) => { 
+        e.preventDefault(); 
+        e.stopPropagation();
+        keys[key] = false; 
+      }, { passive: false });
+      
+      btn.addEventListener('mousedown', (e) => { 
+        e.preventDefault(); 
+        keys[key] = true; 
+      });
+      
+      btn.addEventListener('mouseup', (e) => { 
+        e.preventDefault(); 
+        keys[key] = false; 
+      });
+      
+      btn.addEventListener('mouseleave', (e) => { 
+        keys[key] = false; 
+      });
+    }
     
-    jumpBtn.addEventListener('touchend', (e) => { 
-      e.preventDefault(); 
-      e.stopPropagation();
-      keys.space = false; 
-    }, { passive: false });
-    
-    jumpBtn.addEventListener('mousedown', (e) => { 
-      e.preventDefault(); 
-      keys.space = true; 
-    });
-    
-    jumpBtn.addEventListener('mouseup', (e) => { 
-      e.preventDefault(); 
-      keys.space = false; 
-    });
-    
-    boostBtn.addEventListener('touchstart', (e) => { 
-      e.preventDefault(); 
-      e.stopPropagation();
-      keys.shift = true; 
-    }, { passive: false });
-    
-    boostBtn.addEventListener('touchend', (e) => { 
-      e.preventDefault(); 
-      e.stopPropagation();
-      keys.shift = false; 
-    }, { passive: false });
-    
-    boostBtn.addEventListener('mousedown', (e) => { 
-      e.preventDefault(); 
-      keys.shift = true; 
-    });
-    
-    boostBtn.addEventListener('mouseup', (e) => { 
-      e.preventDefault(); 
-      keys.shift = false; 
-    });
+    setupButton(jumpBtn, 'space');
+    setupButton(boostBtn, 'shift');
     
     // Управление камерой через touch (свайп по экрану)
     let cameraTouch = null;
