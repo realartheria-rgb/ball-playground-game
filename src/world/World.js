@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 
 export class World {
-  constructor(scene, world) {
+  constructor(scene, physicsWorld) {
     this.scene = scene;
-    this.world = world;
+    this.physicsWorld = physicsWorld;
     
     this.meshes = [];
     this.bodies = [];
@@ -43,7 +43,7 @@ export class World {
       position: new CANNON.Vec3(0, 0, 0)
     });
     groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
-    this.world.addBody(groundBody);
+    this.physicsWorld.addBody(groundBody);
     
     // Дорожка (бежевая)
     const pathGeo = new THREE.PlaneGeometry(8, 60);
@@ -70,7 +70,7 @@ export class World {
       shape: new CANNON.Box(new CANNON.Vec3(3, 0.5, 3)),
       position: new CANNON.Vec3(15, 0.5, 0)
     });
-    this.world.addBody(platformBody);
+    this.physicsWorld.addBody(platformBody);
     
     // Горка (рампа)
     const slideGeo = new THREE.BoxGeometry(3, 0.2, 10);
@@ -87,7 +87,7 @@ export class World {
       position: new CANNON.Vec3(15, 3, 8)
     });
     slideBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 6);
-    this.world.addBody(slideBody);
+    this.physicsWorld.addBody(slideBody);
     
     // Лестница к горке
     for (let i = 0; i < 5; i++) {
@@ -102,7 +102,7 @@ export class World {
         shape: new CANNON.Box(new CANNON.Vec3(1, 0.15, 0.25)),
         position: new CANNON.Vec3(15, 0.3 + i * 0.5, -2 + i * 0.8)
       });
-      this.world.addBody(stepBody);
+      this.physicsWorld.addBody(stepBody);
     }
   }
   
@@ -140,7 +140,7 @@ export class World {
       shape: new CANNON.Cylinder(0.3, 0.3, 10, 16),
       position: new CANNON.Vec3(-15, 0, 0)
     });
-    this.world.addBody(pillarBody);
+    this.physicsWorld.addBody(pillarBody);
   }
   
   createSwings() {
@@ -191,7 +191,7 @@ export class World {
       shape: new CANNON.Box(new CANNON.Vec3(0.75, 0.1, 0.4)),
       position: new CANNON.Vec3(-6, 2.5, 15)
     });
-    this.world.addBody(seatBody);
+    this.physicsWorld.addBody(seatBody);
     
     const hinge = new CANNON.HingeConstraint(seatBody, new CANNON.Body({ mass: 0 }), {
       pivotA: new CANNON.Vec3(0, 1.5, 0),
@@ -199,7 +199,7 @@ export class World {
       pivotB: new CANNON.Vec3(-6, 5, 15),
       axisB: new CANNON.Vec3(1, 0, 0)
     });
-    this.world.addConstraint(hinge);
+    this.physicsWorld.addConstraint(hinge);
   }
   
   createSeesaw() {
@@ -216,7 +216,7 @@ export class World {
       shape: new CANNON.Box(new CANNON.Vec3(2.5, 0.15, 0.75)),
       position: new CANNON.Vec3(0, 1.5, 20)
     });
-    this.world.addBody(plankBody);
+    this.physicsWorld.addBody(plankBody);
     
     // Опора (треугольник)
     const supportGeo = new THREE.ConeGeometry(1, 1.5, 4);
@@ -232,7 +232,7 @@ export class World {
       shape: new CANNON.Cylinder(0.5, 1, 1.5, 4),
       position: new CANNON.Vec3(0, 0.75, 20)
     });
-    this.world.addBody(supportBody);
+    this.physicsWorld.addBody(supportBody);
     
     // Шарнир для каталки
     const hinge = new CANNON.HingeConstraint(plankBody, supportBody, {
@@ -241,7 +241,7 @@ export class World {
       pivotB: new CANNON.Vec3(0, 0.75, 0),
       axisB: new CANNON.Vec3(1, 0, 0)
     });
-    this.world.addConstraint(hinge);
+    this.physicsWorld.addConstraint(hinge);
   }
   
   createSandbox() {
@@ -249,7 +249,7 @@ export class World {
     const sandGeo = new THREE.BoxGeometry(10, 0.5, 10);
     const sandMat = new THREE.MeshStandardMaterial({ color: 0xf5deb3 });
     const sand = new THREE.Mesh(sandGeo, sandMat);
-    position.set(25, 0.25, 0);
+    sand.position.set(25, 0.25, 0);
     sand.receiveShadow = true;
     this.scene.add(sand);
     
@@ -258,7 +258,7 @@ export class World {
       shape: new CANNON.Box(new CANNON.Vec3(5, 0.25, 5)),
       position: new CANNON.Vec3(25, 0.25, 0)
     });
-    this.world.addBody(sandBody);
+    this.physicsWorld.addBody(sandBody);
     
     // Столбики песочницы
     const postMat = new THREE.MeshStandardMaterial({ color: 0x8d6e63 });
@@ -274,7 +274,7 @@ export class World {
         shape: new CANNON.Cylinder(0.2, 0.2, 1, 8),
         position: new CANNON.Vec3(x, y, z)
       });
-      this.world.addBody(postBody);
+      this.physicsWorld.addBody(postBody);
     });
   }
   
@@ -292,7 +292,7 @@ export class World {
       shape: new CANNON.Cylinder(4, 4.5, 1, 32),
       position: new CANNON.Vec3(0, 0.5, 0)
     });
-    this.world.addBody(baseBody);
+    this.physicsWorld.addBody(baseBody);
     
     // Вода
     const waterGeo = new THREE.CylinderGeometry(3.5, 3.5, 0.3, 32);
@@ -340,7 +340,7 @@ export class World {
       shape: new CANNON.Cylinder(0.3, 0.5, 3, 8),
       position: new CANNON.Vec3(x, y + 1.5, z)
     });
-    this.world.addBody(trunkBody);
+    this.physicsWorld.addBody(trunkBody);
     
     // Крона (3 слоя)
     const leafColors = [0x2e7d32, 0x388e3c, 0x43a047];
@@ -392,7 +392,7 @@ export class World {
         shape: new CANNON.Box(new CANNON.Vec3(0.75, 0.75, 0.75)),
         position: new CANNON.Vec3(x, y, z)
       });
-      this.world.addBody(cubeBody);
+      this.physicsWorld.addBody(cubeBody);
     });
     
     // Столбики
@@ -413,7 +413,7 @@ export class World {
         shape: new CANNON.Cylinder(0.3, 0.3, 2, 8),
         position: new CANNON.Vec3(x, 1, z)
       });
-      this.world.addBody(postBody);
+      this.physicsWorld.addBody(postBody);
     }
   }
   
@@ -441,7 +441,7 @@ export class World {
         position: new CANNON.Vec3(pos[0], pos[1] + 2, pos[2])
       });
       rampBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), rot);
-      this.world.addBody(rampBody);
+      this.physicsWorld.addBody(rampBody);
     });
   }
   
@@ -470,7 +470,7 @@ export class World {
         shape: new CANNON.Box(new CANNON.Vec3(size[0] / 2, size[1] / 2, size[2] / 2)),
         position: new CANNON.Vec3(...pos)
       });
-      this.world.addBody(wallBody);
+      this.physicsWorld.addBody(wallBody);
     });
   }
 }

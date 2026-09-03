@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 
 export class Player {
-  constructor(scene, world, camera) {
+  constructor(scene, physicsWorld, camera) {
     this.scene = scene;
-    this.world = world;
+    this.physicsWorld = physicsWorld;
     this.camera = camera;
     
     this.position = new THREE.Vector3(0, 2, 0);
@@ -61,7 +61,7 @@ export class Player {
       angularDamping: 0.5
     });
     this.body.allowSleep = false;
-    this.world.addBody(this.body);
+    this.physicsWorld.addBody(this.body);
   }
   
   update(delta) {
@@ -151,7 +151,7 @@ export class Player {
     const rayTo = new CANNON.Vec3(this.body.position.x, this.body.position.y - 1.2, this.body.position.z);
     const raycast = new CANNON.Ray(rayFrom, rayTo);
     raycast.skipBackfaces = true;
-    const result = raycast.intersectWorld(this.world, { mode: CANNON.Ray.CLOSEST, skipBackfaces: true });
+    const result = raycast.intersectWorld(this.physicsWorld, { mode: CANNON.Ray.CLOSEST, skipBackfaces: true });
     this.isGrounded = result.hasHit;
   }
   

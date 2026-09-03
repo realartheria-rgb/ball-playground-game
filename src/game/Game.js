@@ -25,9 +25,9 @@ export class Game {
     this.initPhysics();
     this.initLights();
     
-    this.world = new World(this.scene, this.world);
-    this.player = new Player(this.scene, this.world, this.camera);
-    this.collectibles = new Collectibles(this.scene, this.world);
+    this.world = new World(this.scene, this.physicsWorld);
+    this.player = new Player(this.scene, this.physicsWorld, this.camera);
+    this.collectibles = new Collectibles(this.scene, this.physicsWorld);
     this.effects = new Effects(this.scene);
     this.audio = new Audio();
     this.ui = new UI(this);
@@ -61,13 +61,13 @@ export class Game {
   }
   
   initPhysics() {
-    this.world = new CANNON.World({
+    this.physicsWorld = new CANNON.World({
       gravity: new CANNON.Vec3(0, -9.82, 0)
     });
-    this.world.broadphase = new CANNON.SAPBroadphase(this.world);
-    this.world.allowSleep = true;
-    this.world.defaultContactMaterial.friction = 0.3;
-    this.world.defaultContactMaterial.restitution = 0.4;
+    this.physicsWorld.broadphase = new CANNON.SAPBroadphase(this.physicsWorld);
+    this.physicsWorld.allowSleep = true;
+    this.physicsWorld.defaultContactMaterial.friction = 0.3;
+    this.physicsWorld.defaultContactMaterial.restitution = 0.4;
   }
   
   initLights() {
@@ -133,7 +133,7 @@ export class Game {
       }
     }
     
-    this.world.step(1/60, delta, 3);
+    this.physicsWorld.step(1/60, delta, 3);
     this.player.update(delta);
     this.collectibles.update(delta, this.player.getPosition());
     this.effects.update(delta);

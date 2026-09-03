@@ -4,7 +4,7 @@ import * as CANNON from 'cannon-es';
 export class Collectibles {
   constructor(scene, world) {
     this.scene = scene;
-    this.world = world;
+    this.physicsWorld = world;
     this.objects = [];
     this.spawnPositions = [];
     
@@ -110,7 +110,7 @@ export class Collectibles {
       isTrigger: true
     });
     body.userData = { type, id };
-    this.world.addBody(body);
+    this.physicsWorld.addBody(body);
     
     this.objects.push({ mesh, body, type, id });
   }
@@ -157,7 +157,7 @@ export class Collectibles {
     
     // Удаляем из сцены и мира
     this.scene.remove(obj.mesh);
-    this.world.removeBody(obj.body);
+    this.physicsWorld.removeBody(obj.body);
     
     // Вызываем callback для начисления очков
     if (this.onCollect) {
@@ -169,7 +169,7 @@ export class Collectibles {
     // Удаляем все объекты
     this.objects.forEach(obj => {
       this.scene.remove(obj.mesh);
-      this.world.removeBody(obj.body);
+      this.physicsWorld.removeBody(obj.body);
     });
     this.objects = [];
     
