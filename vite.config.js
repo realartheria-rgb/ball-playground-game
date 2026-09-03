@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   root: '.',
+  base: '/ball-playground-game/',
   publicDir: 'public',
   build: {
     outDir: 'dist',
